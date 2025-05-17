@@ -4,3 +4,6 @@ def api_create():
 
 def folder_path():
     return "/Wav_main"
+
+def api_key():
+    return "a25cd3c3a7324238bfe38789cc8ffbf9"

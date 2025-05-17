@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import parselmouth
 import tempfile
 import json
-from  dactrung import  mfcc, energy_contour, formant_f1_f2, spactral_centroid, bandwind, roof_off
+from  dactrung import  mfcc, energy_contour, formant_f1_f2, spactral_centroid, bandwind, roof_off, text_convert
 
 # Kết nối MongoDB với URI
 me.connect(
@@ -18,7 +18,8 @@ me.connect(
 
 # Định nghĩa schema/model
 class AudioFeature(me.Document):
-    file_name = me.StringField(required=True)     # Tên file audio
+    file_name = me.StringField(required=True)
+    text = me.StringField()# Tên file audio
     mfccs = me.StringField()                        # Chuỗi dữ liệu mô tả hoặc JSON string (tùy bạn lưu gì)
     energy = me.StringField()
     formant = me.StringField()
@@ -39,7 +40,8 @@ if __name__ == "__main__":
     if response.status_code != 200:
         print("Lỗi tải file:", response.status_code)
     audio_bytes = io.BytesIO(response.content)
-
+    t = text_convert(audio_bytes)
+    audio_bytes = io.BytesIO(response.content)
     m = mfcc(audio_bytes)
     audio_bytes = io.BytesIO(response.content)
     e = energy_contour(audio_bytes)
@@ -55,6 +57,6 @@ if __name__ == "__main__":
     r = roof_off(audio_bytes)
 
 
-    feature = AudioFeature(file_name=dropbox_preview_link, mfccs=m, energy = e, formant=formant,spec= s, bandw= band, roof =r)
+    feature = AudioFeature(file_name=dropbox_preview_link,text= t, mfccs=m, energy = e, formant=formant,spec= s, bandw= band, roof =r)
     feature.save()
     print("Đã lưu document với id:", feature.id)

@@ -7,6 +7,7 @@ me.connect('audio', host='mongodb+srv://onmontoan:biahoibuncha8862@cluster0.mhbs
 # Định nghĩa schema
 class AudioFeature(me.Document):
     file_name = me.StringField()
+    text = me.StringField()
     mfccs = me.StringField()
     energy = me.StringField()
     formant = me.StringField()
@@ -24,6 +25,7 @@ cnt =0
 for doc in docs:
     data.append({
         "file_name": doc.file_name,
+        "text": doc.text,
         "mfccs": doc.mfccs,
         "energy": doc.energy,
         "formant": doc.formant,

@@ -1,23 +1,27 @@
-import zipfile
-import pandas as pd
-# csv_path = "Data/audio_data.csv"
-zip_path = "Data/audio_data.zip"
-#
-# with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-#     zipf.write(csv_path, arcname='audio_data.csv')
-#df = pd.read_csv("Data/audio_data.csv")
+import requests
+import io
+import json
+from api import api_key
+import assemblyai as aai
 
-# zip_path = "Data/audio_data.zip"
-#
-# Mở file zip
-with zipfile.ZipFile(zip_path) as z:
-    # Danh sách file bên trong zip (lấy tên file .csv)
-    csv_filename = [f for f in z.namelist() if f.endswith('.csv')][0]
+API_KEY = api_key()
+# Đọc lại từ file
+with open("Data/my_list.json", "r") as f:
+    loaded_list = json.load(f)
 
-    # Đọc trực tiếp file CSV bên trong zip thành DataFrame
-    with z.open(csv_filename) as f:
-        df = pd.read_csv(f)
+# Chuyển link preview thành link tải file nhị phân trực tiếp
+direct_url = loaded_list[0].replace("dl=0", "dl=1")
+response = requests.get(direct_url)
+if response.status_code != 200:
+        print("Lỗi tải file:", response.status_code)
+audio_bytes = io.BytesIO(response.content)
 
-df.to_csv('Data/audio_data.csv.gz', index=False, compression='gzip')
-# Kiểm tra kết quả
-print(df.head())
+
+
+
+aai.settings.api_key= API_KEY
+
+transcriber = aai.Transcriber()
+
+trans = transcriber.transcribe(audio_bytes)
+print(trans.text)

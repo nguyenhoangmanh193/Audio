@@ -25,15 +25,16 @@ list_data = json.loads(list_mfccs[0])
 
 
 # Chuyển list thành numpy array
-arr = np.array(list_data)
-recommened = []
-for i in range(0,len(list_mfccs)):
-    d1 = json.loads(list_mfccs[i])
-    d1 = np.array((d1))
-    recommened.append(f"{df['file_name'][i]}: {dtw2(d1, arr):.4f}")
-    #print(f"{df['file_name'][i]}: {dtw2(d1, arr):.4f}")
-recommened.sort()
-for i in range(0,10):
-    print(recommened[i])
+#arr = np.array(list_data)
+
+# for i in range(0,len(list_mfccs)):
+#     d1 = json.loads(list_mfccs[i])
+#     d1 = np.array((d1))
+#
+#     print(f"{df['file_name'][i]}: {dtw2(d1, arr):.4f}")
+# recommened.sort()
+# for i in range(0,10):
+#     print(recommened[i])
 
 
+print(len(df))

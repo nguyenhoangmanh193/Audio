@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 import parselmouth
 import tempfile
 import json
-
+from api import api_key
+import assemblyai as aai
 # Link bạn cung cấp
 # dropbox_preview_link = "https://www.dropbox.com/scl/fi/phsclrp8qmqxkpps9jguu/video_59_chunk_3.wav?rlkey=95pt94yklx7a0dxd6m9shm7cz&st=4s20ubcd&dl=0"
 #
@@ -17,7 +18,14 @@ import json
 # if response.status_code != 200:
 #     print("Lỗi tải file:", response.status_code)
 # audio_bytes = io.BytesIO(response.content)
+API_KEY = api_key()
+def text_convert(audio_bytes):
+    aai.settings.api_key = API_KEY
 
+    transcriber = aai.Transcriber()
+
+    trans = transcriber.transcribe(audio_bytes)
+    return  trans.text
 def mfcc(preview_url):
     #try:
         y, sr = librosa.load(preview_url)  # sr=None giữ nguyên sample rate gốc
