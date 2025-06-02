@@ -24,4 +24,9 @@ aai.settings.api_key= API_KEY
 transcriber = aai.Transcriber()
 
 trans = transcriber.transcribe(audio_bytes)
-print(trans.text)
+
+text = trans.text
+max_chars = 50
+
+for i in range(0, len(text), max_chars):
+    print(text[i:i+max_chars])

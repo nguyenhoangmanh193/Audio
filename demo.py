@@ -38,5 +38,6 @@ for doc in docs:
 
 # Tạo DataFrame
 df = pd.DataFrame(data)
+
 df.to_csv("Data/audio_data.csv", index=False)
 print(df.head())  # In ra 5 dòng đầu tiên

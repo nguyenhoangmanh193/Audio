@@ -146,6 +146,8 @@ def roof_off(file_path):
 # print(x)
 # print(type(x))
 # print('sss')
-
+if __name__ == "__main__":
+    # chỉ chạy khi module này được chạy trực tiếp
+    print("Tôi đang ở module_a.py")
 
 
