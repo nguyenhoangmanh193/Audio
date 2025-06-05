@@ -7,7 +7,7 @@ import parselmouth
 import librosa.sequence
 import matplotlib.pyplot as plt
 import  json
-from  Predict import dtw_ngudieu, dtw_phatam
+from  Predict import dtw_ngudieu, dtw_phatam, dtw_giongnoi
 import  pandas as pd
 from  dactrung import  mfcc, energy_contour, formant_f1_f2, spactral_centroid, bandwind, roof_off,text_convert
 
@@ -82,6 +82,117 @@ def plot_formants_streamlit(arr_str, step=0.01):
 
     except Exception as e:
         st.error(f"Lỗi khi vẽ scatter formant: {e}")
+
+def plot_spectral_centroid(arr_str):
+    """
+    Vẽ đồ thị spectral centroid theo thời gian từ chuỗi JSON arr_str.
+
+    Giả định:
+    - sr (sampling rate) = 22050 Hz (librosa mặc định)
+    - hop_length = 512 (librosa mặc định)
+    """
+    try:
+        # Tham số mặc định
+        sr = 22050
+        hop_length = 512
+
+        # Giải mã chuỗi JSON
+        centroid = np.array(json.loads(arr_str)).flatten()
+
+        # Tính trục thời gian
+        frames = np.arange(len(centroid))
+        times = librosa.frames_to_time(frames, sr=sr, hop_length=hop_length)
+
+        # Vẽ biểu đồ
+        fig, ax = plt.subplots()
+        ax.plot(times, centroid, color='purple', label='Spectral Centroid')
+        ax.set_xlabel("Thời gian (s)")
+        ax.set_ylabel("Tần số (Hz)")
+        ax.set_title("Spectral Centroid theo thời gian")
+        ax.grid(True)
+        ax.legend()
+
+        # Hiển thị trên Streamlit
+        st.subheader("🎵 Spectral Centroid theo thời gian")
+        st.pyplot(fig)
+
+    except Exception as e:
+        st.error(f"Lỗi khi vẽ spectral centroid: {e}")
+
+
+def plot_spectral_bandwidth(arr_str):
+    """
+    Vẽ đồ thị spectral bandwidth theo thời gian từ chuỗi JSON arr_str.
+
+    Giả định:
+    - sr = 22050 (sampling rate mặc định của librosa)
+    - hop_length = 512 (mặc định khi dùng librosa.feature.spectral_bandwidth)
+    """
+    try:
+        # Tham số mặc định
+        sr = 22050
+        hop_length = 512
+
+        # Giải mã JSON
+        bandwidth = np.array(json.loads(arr_str)).flatten()
+
+        # Tạo trục thời gian tương ứng
+        frames = np.arange(len(bandwidth))
+        times = librosa.frames_to_time(frames, sr=sr, hop_length=hop_length)
+
+        # Vẽ biểu đồ
+        fig, ax = plt.subplots()
+        ax.plot(times, bandwidth, color='green', label='Spectral Bandwidth')
+        ax.set_xlabel("Thời gian (s)")
+        ax.set_ylabel("Tần số (Hz)")
+        ax.set_title("Spectral Bandwidth theo thời gian")
+        ax.grid(True)
+        ax.legend()
+
+        # Hiển thị bằng Streamlit
+        st.subheader("🎶 Spectral Bandwidth theo thời gian")
+        st.pyplot(fig)
+
+    except Exception as e:
+        st.error(f"Lỗi khi vẽ spectral bandwidth: {e}")
+
+
+def plot_spectral_rolloff(arr_str):
+    """
+    Vẽ đồ thị spectral roll-off theo thời gian từ chuỗi JSON arr_str.
+
+    Giả định:
+    - sr = 22050 (tần số lấy mẫu mặc định của librosa)
+    - hop_length = 512 (khoảng cách giữa các frame mặc định)
+    """
+    try:
+        # Mặc định librosa
+        sr = 22050
+        hop_length = 512
+
+        # Giải mã JSON
+        rolloff = np.array(json.loads(arr_str)).flatten()
+
+        # Tính trục thời gian
+        frames = np.arange(len(rolloff))
+        times = librosa.frames_to_time(frames, sr=sr, hop_length=hop_length)
+
+        # Vẽ biểu đồ
+        fig, ax = plt.subplots()
+        ax.plot(times, rolloff, color='orange', label='Spectral Roll-off')
+        ax.set_xlabel("Thời gian (s)")
+        ax.set_ylabel("Tần số (Hz)")
+        ax.set_title("Spectral Roll-off theo thời gian")
+        ax.grid(True)
+        ax.legend()
+
+        # Hiển thị trên Streamlit
+        st.subheader("📉 Spectral Roll-off theo thời gian")
+        st.pyplot(fig)
+
+    except Exception as e:
+        st.error(f"Lỗi khi vẽ spectral roll-off: {e}")
+
 
 
 
@@ -221,12 +332,47 @@ elif page == "🗣️ Kiểu phát âm":
         st.info("📂 Vui lòng tải lên một file âm thanh.")
 
 elif page == "🎤 Giọng nói":
-        st.subheader("🎤 Nhận dạng Giọng nói")
-        if st.button("Nhận dạng giọng nói"):
-            st.success("✅ Kết quả giọng nói:")
-            st.markdown("""
-            - **Giới tính**: Nữ
-            - **Vùng miền**: Miền Trung
-            - **Ước lượng tuổi**: 20-30 tuổi
-            """)
+    st.subheader("📈 Phân tích giọng nói")
+    uploaded_file = st.file_uploader("🎵 Tải lên file âm thanh", type=["wav", "mp3", "m4a"])
+
+    if uploaded_file is not None:
+        uploaded_file.seek(0)
+        spec = spactral_centroid(uploaded_file)
+
+        uploaded_file.seek(0)
+        banw = bandwind(uploaded_file)
+
+        uploaded_file.seek(0)
+        roof = roof_off(uploaded_file)
+
+        # Lấy link từ hàm dtw và chuyển về dạng direct
+        raw_links = dtw_giongnoi(spec, banw,roof)
+        audio_links = [convert_dropbox_link_to_direct(link) for link in raw_links]
+
+        cols = st.columns(4)
+
+        with cols[0]:
+            st.markdown("**🔊 File của bạn**")
+            st.audio(uploaded_file, format="audio/wav")
+            plot_spectral_centroid(spec)
+            plot_spectral_bandwidth(banw)
+            plot_spectral_rolloff(roof)
+
+        for i in range(3):
+            with cols[i + 1]:
+                # mfcc_value = df.loc[df['file_name'] == audio_links[i], 'mfccs'].values[0]
+                # energy_value = df.loc[df['file_name'] == audio_links[i], 'energy'].values[0]
+                key = audio_links[i].split("/")[-1].split("?")[0]
+                spec_value = df.loc[df['file_name'].str.contains(key), 'spec'].values[0]
+                bandw_value = df.loc[df['file_name'].str.contains(key), 'bandw'].values[0]
+                roof_value = df.loc[df['file_name'].str.contains(key), 'roof'].values[0]
+                st.markdown(f"**🔁File giống thứ {i + 1}:  {key}**")
+                st.audio(audio_links[i], format="audio/wav")
+                plot_spectral_centroid(spec_value)
+                plot_spectral_bandwidth(bandw_value)
+                plot_spectral_rolloff(roof_value)
+
+
+    else:
+        st.info("📂 Vui lòng tải lên một file âm thanh.")
 

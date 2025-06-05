@@ -101,6 +101,50 @@ def dtw_phatam(mfccs, formant):
     return list_audio
 
 
+def dtw_giongnoi(spec, bandw, roof):
+    # mfcc, rmse
+    results = {}
+    list_spec = df['spec'].tolist()
+    list_bandw = df['bandw'].tolist()
+    list_roof = df['roof'].tolist()
+    list_data = json.loads(spec) # chọn 1 file
+    list_data1 = json.loads(bandw)  # chọn 1 file
+    list_data2 = json.loads(roof)
+    # Chuyển list thành numpy array
+    arr = np.array(list_data)
+    arr1 = np.array(list_data1)
+    arr2 = np.array(list_data2)
+    for i in range(len(list_spec)):
+        d1 = json.loads(list_spec[i])
+        d1_a = json.loads(list_bandw[i])
+        d1_b = json.loads(list_roof[i])
+
+        d1 = np.array(d1)
+        d1_a = np.array(d1_a)
+        d1_b = np.array(d1_b)
+        ds = dtw(d1, arr)
+        ds1 = dtw(d1_a, arr1)
+        ds2 = dtw(d1_b, arr2)
+
+        ds_sum = (ds/4 + ds1+ds2/4)/2
+        print(f"{df['file_name'][i]}: spec:{ds:.4f}, bandw:{ds1:.4f}, roof:{ds2:.4f} ,sum:{ds_sum:.4f} ")
+        score = ds_sum
+        file_name = df['file_name'][i]
+
+        results[file_name] = round(score, 4)
+
+    # Sắp xếp theo giá trị tăng dần
+    sorted_results = dict(sorted(results.items(), key=lambda item: item[1]))
+
+    list_audio = []
+    top_3 = list(sorted_results.items())[:3]
+    for idx, (key, value) in enumerate(top_3, 1):
+        list_audio.append(key)
+        key = key.split("/")[-1].split("?")[0]
+        print(f"{idx}. {key}: {value}")
+    return list_audio
+
+
 
 if __name__ == "__main__":
     df = pd.read_csv("Data/audio_data.csv")

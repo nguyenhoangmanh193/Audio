@@ -47,6 +47,43 @@ def plot_energy_streamlit(arr_str):
     # Hiển thị trên Streamlit
     st.pyplot(fig)
 
+def plot_formants_streamlit(arr_str, step=0.01):
+    """
+    Vẽ đồ thị formant F1 và F2 theo thời gian từ chuỗi JSON arr_str.
+
+    Parameters:
+    - arr_str (str): Chuỗi JSON chứa mảng [[F1, F2], [F1, F2], ...]
+    - step (float): Khoảng thời gian giữa các mẫu (mặc định 0.01s)
+
+    Hiển thị đồ thị trực tiếp bằng Streamlit.
+    """
+    try:
+        # Giải mã JSON về mảng numpy shape (N, 2)
+        arr1 = np.array(json.loads(arr_str)).T  # shape (N,2)
+
+
+        f1_1, f2_1 = arr1[:, 0], arr1[:, 1]
+
+
+        # Vẽ scatter
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.scatter(f1_1, f2_1, alpha=0.5, label="Audio 1", color="blue", s=10)
+
+
+        ax.set_xlabel("Formant 1 (F1) [Hz]")
+        ax.set_ylabel("Formant 2 (F2) [Hz]")
+        ax.set_title("Formant F1 và F2 ")
+        ax.legend()
+        ax.grid(True)
+
+        # Hiển thị trên Streamlit
+        st.subheader("Biểu đồ scatter so sánh F1–F2 giữa hai audio")
+        st.pyplot(fig)
+
+    except Exception as e:
+        st.error(f"Lỗi khi vẽ scatter formant: {e}")
+
+
 
 st.set_page_config(page_title="Phân tích giọng nói", layout="wide")
 
@@ -124,7 +161,10 @@ elif page == "🗣️ Kiểu phát âm":
         # Tính formant
         uploaded_file.seek(0)
         # ✅ Trích xuất formants (F1 và F2) từ file1
-        snd = parselmouth.Sound(uploaded_file)
+        with open("temp_audio.wav", "wb") as f:
+            f.write(uploaded_file.read())
+
+        snd = parselmouth.Sound("temp_audio.wav")
         formant = snd.to_formant_burg()
         f1_1, f2_1 = [], []
         for t in np.arange(0, snd.duration, 0.01):
@@ -133,12 +173,18 @@ elif page == "🗣️ Kiểu phát âm":
             if not np.isnan(f1) and not np.isnan(f2):
                 f1_1.append(f1)
                 f2_1.append(f2)
+
+        # ✅ Ghép F1 và F2 thành vector đặc trưng
+        if len(f1_1) < len(f2_1):
+            min_len1 = len(f1_1)
+        else:
+            min_len1 = len(f2_1)
+
         f1_1 = np.array(f1_1)
         f2_1 = np.array(f2_1)
-        # ✅ Ghép F1 và F2 thành vector đặc trưng
-        min_len1 = min(len(f1_1), len(f2_1))
+
         vec = np.column_stack((f1_1[:min_len1], f2_1[:min_len1]))
-        # ✅ Tính DTW
+        # # ✅ Tính DTW
         vec_T = vec.T
         arr_list = vec_T.tolist()
         arr_str = json.dumps(arr_list)
@@ -146,30 +192,29 @@ elif page == "🗣️ Kiểu phát âm":
         # End
         formant = arr_str
 
-        st.write(formant)
         # Lấy link từ hàm dtw và chuyển về dạng direct
-        # raw_links = dtw_phatam(mfccs, formant)
-        # audio_links = [convert_dropbox_link_to_direct(link) for link in raw_links]
-        #
-        # cols = st.columns(4)
-        #
-        # with cols[0]:
-        #     st.markdown("**🔊 File của bạn**")
-        #     st.audio(uploaded_file, format="audio/wav")
-        #     plot_mfcc_streamlit(mfccs)
-        #     #plot_energy_streamlit(f)
-        #
-        # for i in range(3):
-        #     with cols[i + 1]:
-        #         # mfcc_value = df.loc[df['file_name'] == audio_links[i], 'mfccs'].values[0]
-        #         # energy_value = df.loc[df['file_name'] == audio_links[i], 'energy'].values[0]
-        #         key = audio_links[i].split("/")[-1].split("?")[0]
-        #         mfcc_value = df.loc[df['file_name'].str.contains(key), 'mfccs'].values[0]
-        #         formant_value = df.loc[df['file_name'].str.contains(key), 'formant'].values[0]
-        #         st.markdown(f"**🔁File giống thứ {i + 1}:  {key}**")
-        #         st.audio(audio_links[i], format="audio/wav")
-        #         plot_mfcc_streamlit(mfcc_value)
-        #         #plot_energy_streamlit(energy_value)
+        raw_links = dtw_phatam(mfccs, formant)
+        audio_links = [convert_dropbox_link_to_direct(link) for link in raw_links]
+
+        cols = st.columns(4)
+
+        with cols[0]:
+            st.markdown("**🔊 File của bạn**")
+            st.audio(uploaded_file, format="audio/wav")
+            plot_mfcc_streamlit(mfccs)
+            plot_formants_streamlit(formant)
+
+        for i in range(3):
+            with cols[i + 1]:
+                # mfcc_value = df.loc[df['file_name'] == audio_links[i], 'mfccs'].values[0]
+                # energy_value = df.loc[df['file_name'] == audio_links[i], 'energy'].values[0]
+                key = audio_links[i].split("/")[-1].split("?")[0]
+                mfcc_value = df.loc[df['file_name'].str.contains(key), 'mfccs'].values[0]
+                formant_value = df.loc[df['file_name'].str.contains(key), 'formant'].values[0]
+                st.markdown(f"**🔁File giống thứ {i + 1}:  {key}**")
+                st.audio(audio_links[i], format="audio/wav")
+                plot_mfcc_streamlit(mfcc_value)
+                plot_formants_streamlit(formant_value)
 
 
     else:
