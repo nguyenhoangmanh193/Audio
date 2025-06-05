@@ -86,6 +86,7 @@ def formant_f1_f2(file_path,response):
         f2_1 = np.array(f2_1)
         # ✅ Ghép F1 và F2 thành vector đặc trưng
         min_len1 = min(len(f1_1), len(f2_1))
+
         vec = np.column_stack((f1_1[:min_len1], f2_1[:min_len1]))
         # ✅ Tính DTW
         vec_T = vec.T
