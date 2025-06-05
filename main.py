@@ -7,6 +7,9 @@ import parselmouth
 import librosa.sequence
 import matplotlib.pyplot as plt
 import  json
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+import streamlit as st
 from  Predict import dtw_ngudieu, dtw_phatam, dtw_giongnoi
 import  pandas as pd
 from  dactrung import  mfcc, energy_contour, formant_f1_f2, spactral_centroid, bandwind, roof_off,text_convert
@@ -48,15 +51,7 @@ def plot_energy_streamlit(arr_str):
     st.pyplot(fig)
 
 def plot_formants_streamlit(arr_str, step=0.01):
-    """
-    Vẽ đồ thị formant F1 và F2 theo thời gian từ chuỗi JSON arr_str.
 
-    Parameters:
-    - arr_str (str): Chuỗi JSON chứa mảng [[F1, F2], [F1, F2], ...]
-    - step (float): Khoảng thời gian giữa các mẫu (mặc định 0.01s)
-
-    Hiển thị đồ thị trực tiếp bằng Streamlit.
-    """
     try:
         # Giải mã JSON về mảng numpy shape (N, 2)
         arr1 = np.array(json.loads(arr_str)).T  # shape (N,2)
@@ -84,13 +79,7 @@ def plot_formants_streamlit(arr_str, step=0.01):
         st.error(f"Lỗi khi vẽ scatter formant: {e}")
 
 def plot_spectral_centroid(arr_str):
-    """
-    Vẽ đồ thị spectral centroid theo thời gian từ chuỗi JSON arr_str.
 
-    Giả định:
-    - sr (sampling rate) = 22050 Hz (librosa mặc định)
-    - hop_length = 512 (librosa mặc định)
-    """
     try:
         # Tham số mặc định
         sr = 22050
@@ -121,13 +110,7 @@ def plot_spectral_centroid(arr_str):
 
 
 def plot_spectral_bandwidth(arr_str):
-    """
-    Vẽ đồ thị spectral bandwidth theo thời gian từ chuỗi JSON arr_str.
 
-    Giả định:
-    - sr = 22050 (sampling rate mặc định của librosa)
-    - hop_length = 512 (mặc định khi dùng librosa.feature.spectral_bandwidth)
-    """
     try:
         # Tham số mặc định
         sr = 22050
@@ -158,13 +141,7 @@ def plot_spectral_bandwidth(arr_str):
 
 
 def plot_spectral_rolloff(arr_str):
-    """
-    Vẽ đồ thị spectral roll-off theo thời gian từ chuỗi JSON arr_str.
 
-    Giả định:
-    - sr = 22050 (tần số lấy mẫu mặc định của librosa)
-    - hop_length = 512 (khoảng cách giữa các frame mặc định)
-    """
     try:
         # Mặc định librosa
         sr = 22050
@@ -194,7 +171,13 @@ def plot_spectral_rolloff(arr_str):
         st.error(f"Lỗi khi vẽ spectral roll-off: {e}")
 
 
-
+def compute_similarities(text_main, text_list):
+    model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+    embeddings = model.encode([text_main] + text_list)
+    main_vec = embeddings[0].reshape(1, -1)
+    list_vecs = embeddings[1:]
+    similarities = cosine_similarity(main_vec, list_vecs).flatten()
+    return similarities
 
 st.set_page_config(page_title="Phân tích giọng nói", layout="wide")
 
@@ -202,27 +185,57 @@ st.title("🎙️ Hệ thống phân tích giọng nói")
 
 # Sidebar menu
 page = st.sidebar.radio(
-    "📌 Chọn chức năng",
+    "📌 Chọn chức năng tìm kiếm",
     ["📝 Nội dung ngữ nghĩa", "📈 Ngữ điệu", "🗣️ Kiểu phát âm", "🎤 Giọng nói"]
 )
 
 df = pd.read_csv("Data/audio_data.csv")
+# Lọc bỏ các file_name bị lỗi ( quá ngắn )
+patterns = "|".join([
+    "video_2_chunk_3.wav",
+    "video_3_chunk_3.wav",
+    "video_4_chunk_3.wav",
+    "video_5_chunk_3.wav",
+    "video_6_chunk_3.wav"
+])
+
+df = df[~df['file_name'].str.contains(patterns)]
+df = df.reset_index(drop=True)
+
 if page == "📝 Nội dung ngữ nghĩa":
-        st.subheader("📝 Phân tích Nội dung Ngữ nghĩa")
-        if st.button("Phân tích ngữ nghĩa"):
-            # Giả định xử lý chuyển giọng nói thành văn bản
-            st.success("✅ Kết quả phân tích nội dung:")
-            st.markdown("""
-            - **Văn bản trích xuất**: "Xin chào, tôi là trợ lý ảo."
-            - **Chủ đề**: Giao tiếp
-            - **Cảm xúc**: Trung lập
-            - **Mức độ trang trọng**: Trung bình
-            """)
+        st.subheader("📝 Tìm kiếm với nội dung ngữ nghĩa")
+        uploaded_file = st.file_uploader("🎵 Tải lên file âm thanh", type=["wav", "mp3", "m4a"])
+        if uploaded_file is not None:
+            text_main = text_convert(uploaded_file)
+
+            # Lấy danh sách text và tính độ tương đồng
+            text_list = df['text'].tolist()
+            file_names = df['file_name'].tolist()
+            similarities = compute_similarities(text_main, text_list)
+
+            # Gắn vào DataFrame tạm để sắp xếp
+            result_df = df.copy()
+            result_df['similarity'] = similarities
+            top_3 = result_df.sort_values(by='similarity', ascending=False).head(3)
+
+            st.markdown("### 🔍 Top 3 kết quả giống nhất:")
+
+            for idx, row in top_3.iterrows():
+                # Chuyển link Dropbox sang dạng trực tiếp
+                dropbox_url = row['file_name']
+                audio_url= convert_dropbox_link_to_direct(dropbox_url)
+                key = audio_url.split("/")[-1].split("?")[0]
+                # Hiển thị thông tin
+                st.write(f"🎧 **File:** `{key}`")
+                st.audio(audio_url, format="audio/wav")  # bạn có thể thay format nếu file là mp3, m4a...
+                st.write(f"📝 **Nội dung:** {row['text']}")
+                st.write(f"🔍 **Mức độ tương đồng:** `{row['similarity']:.2f}`")
+                st.markdown("---")
 
 
 
 elif page == "📈 Ngữ điệu":
-    st.subheader("📈 Phân tích Ngữ điệu")
+    st.subheader("📈 Tìm kiếm với ngữ điệu")
     uploaded_file = st.file_uploader("🎵 Tải lên file âm thanh", type=["wav", "mp3", "m4a"])
 
     if uploaded_file is not None:
@@ -262,7 +275,7 @@ elif page == "📈 Ngữ điệu":
 
 
 elif page == "🗣️ Kiểu phát âm":
-    st.subheader("📈 Phân tích kiểu phát âm")
+    st.subheader("📈 Tìm kiếm với kiểu phát âm")
     uploaded_file = st.file_uploader("🎵 Tải lên file âm thanh", type=["wav", "mp3", "m4a"])
 
     if uploaded_file is not None:
@@ -332,7 +345,7 @@ elif page == "🗣️ Kiểu phát âm":
         st.info("📂 Vui lòng tải lên một file âm thanh.")
 
 elif page == "🎤 Giọng nói":
-    st.subheader("📈 Phân tích giọng nói")
+    st.subheader("📈 Tìm kiếm với giọng nói")
     uploaded_file = st.file_uploader("🎵 Tải lên file âm thanh", type=["wav", "mp3", "m4a"])
 
     if uploaded_file is not None:
