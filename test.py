@@ -1,14 +1,11 @@
-import  pandas as pd
-df = pd.read_csv("Data/audio_data.csv")
-# Lọc bỏ các hàng mà file_name chứa bất kỳ chuỗi nào trong danh sách
-patterns = "|".join([
-    "video_2_chunk_3.wav",
-    "video_3_chunk_3.wav",
-    "video_4_chunk_3.wav",
-    "video_5_chunk_3.wav",
-    "video_6_chunk_3.wav"
-])
+import  json
+with open("Data/my_list.json", "r") as f:
+    loaded_list = json.load(f)
 
-df = df[~df['file_name'].str.contains(patterns)]
-df = df.reset_index(drop=True)
-print(df.head(45))
+with open("Data/dropbox_links.json", "r") as f:
+    loaded_list2 = json.load(f)
+
+first_5 = loaded_list[:5]
+print(first_5)
+first_55 = loaded_list2[:5]
+print(first_55)

@@ -1,0 +1,4 @@
+Step 1: chạy file get_list_audio để lây danh sách link audio trn dropbox
+Step 2: chạy file Save_data để lưu thuộc tính vào mongoDB
+Step 3: chạy file save_csv lưu dữ liệu từ mongoDB vào file csv, để dễ truy xuất
+Step 4: chạy streamlit main.py
