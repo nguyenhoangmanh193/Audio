@@ -1,8 +1,8 @@
 import mongoengine as me
 import pandas as pd
-
+from  api import mongo_link
 # Kết nối MongoDB
-me.connect('audio', host='mongodb+srv://onmontoan:biahoibuncha8862@cluster0.mhbsw.mongodb.net/audio?retryWrites=true&w=majority')
+me.connect('audio', host=mongo_link())
 
 # Định nghĩa schema
 class AudioFeature(me.Document):

@@ -8,3 +8,8 @@ def folder_path():
 
 def api_key():
     return "a25cd3c3a7324238bfe38789cc8ffbf9"
+
+
+def mongo_link():
+    return "mongodb+srv://onmontoan:(mk)@cluster0.mhbsw.mongodb.net/audio?retryWrites=true&w=majority"
+

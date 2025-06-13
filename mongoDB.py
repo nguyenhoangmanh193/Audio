@@ -9,11 +9,11 @@ import parselmouth
 import tempfile
 import json
 from  dactrung import  mfcc, energy_contour, formant_f1_f2, spactral_centroid, bandwind, roof_off, text_convert
-
+from  api import mongo_link
 # Kết nối MongoDB với URI
 me.connect(
     db="audio",
-    host="mongodb+srv://onmontoan:biahoibuncha8862@cluster0.mhbsw.mongodb.net/audio?retryWrites=true&w=majority"
+    host=mongo_link()
 )
 
 # Định nghĩa schema/model
