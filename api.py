@@ -11,5 +11,5 @@ def api_key():
 
 
 def mongo_link():
-    return "mongodb+srv://onmontoan:biahoibuncha8862@cluster0.mhbsw.mongodb.net/audio?retryWrites=true&w=majority"
+    return "mongodb+srv://onmontoan:[]@cluster0.mhbsw.mongodb.net/audio?retryWrites=true&w=majority"
 
