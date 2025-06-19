@@ -5,6 +5,7 @@ import  json
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 from librosa.sequence import dtw
+
 df = pd.read_csv("Data/audio_data.csv")
 
 # Lọc bỏ các file_name bị lỗi ( quá ngắn )
@@ -19,6 +20,41 @@ patterns = "|".join([
 df = df[~df['file_name'].str.contains(patterns)]
 df = df.reset_index(drop=True)
 def dtw(d1,d2):
+    distance, path = fastdtw(d1, d2, dist=euclidean)
+    return  distance
+
+
+# def dtw(x, y, window=50):
+#     x = np.array(x).reshape(-1, 1)
+#     y = np.array(y).reshape(-1, 1)
+#     N = len(x)
+#     M = len(y)
+#     window = max(window, abs(N - M))  # đảm bảo không bị vượt chiều dài
+#
+#     D = np.full((N, M), np.inf)
+#     for i in range(N):
+#         for j in range(max(0, i - window), min(M, i + window)):
+#             D[i, j] = np.linalg.norm(x[i] - y[j])
+#
+#     cost = np.full((N, M), np.inf)
+#     cost[0, 0] = D[0, 0]
+#
+#     for i in range(1, N):
+#         cost[i, 0] = D[i, 0] + cost[i - 1, 0]
+#     for j in range(1, M):
+#         cost[0, j] = D[0, j] + cost[0, j - 1]
+#
+#     for i in range(1, N):
+#         for j in range(max(1, i - window), min(M, i + window)):
+#             cost[i, j] = D[i, j] + min(
+#                 cost[i - 1, j],      # insertion
+#                 cost[i, j - 1],      # deletion
+#                 cost[i - 1, j - 1]   # match
+#             )
+#
+#     return float(cost[-1, -1])
+
+def dtw_library(d1,d2):
     distance, path = fastdtw(d1, d2, dist=euclidean)
     return  distance
 
@@ -43,9 +79,9 @@ def dtw_ngudieu(mfccs, energy):
 
         d1 = np.array(d1)
         d1_b = np.array(d1_b)
-        ds = dtw(d1, arr)
+        ds = dtw_library(d1, arr)
         ds1 = dtw2(d1_b, arr2)
-        ds_sum = (ds/25 + ds1)/2
+        ds_sum = (ds + ds1)/2
         print(f"{df['file_name'][i]}: mfcc:{ds:.4f}, energy:{ds1:.4f}, sum:{ds_sum:.4f} ")
         score = ds_sum
         file_name = df['file_name'][i]
@@ -80,7 +116,7 @@ def dtw_phatam(mfccs, formant):
 
         d1 = np.array(d1)
         d1_b = np.array(d1_b)
-        ds = dtw(d1, arr)
+        ds = dtw_library(d1, arr)
         ds1 = dtw2(d1_b, arr2)
         ds_sum = (ds + ds1/100)
         print(f"{df['file_name'][i]}: mfcc:{ds:.4f}, formant:{ds1:.4f}, sum:{ds_sum:.4f} ")
@@ -126,7 +162,7 @@ def dtw_giongnoi(spec, bandw, roof):
         ds1 = dtw(d1_a, arr1)
         ds2 = dtw(d1_b, arr2)
 
-        ds_sum = (ds/4 + ds1+ds2/4)/2
+        ds_sum = (ds/10 + ds1+ds2/10)/2
         print(f"{df['file_name'][i]}: spec:{ds:.4f}, bandw:{ds1:.4f}, roof:{ds2:.4f} ,sum:{ds_sum:.4f} ")
         score = ds_sum
         file_name = df['file_name'][i]
