@@ -170,14 +170,33 @@ def plot_spectral_rolloff(arr_str):
     except Exception as e:
         st.error(f"Lỗi khi vẽ spectral roll-off: {e}")
 
+def cosine_similarity_manual(a, b):
+    a = np.array(a)
+    b = np.array(b)
+    dot_product = np.dot(a, b)
+    norm_a = np.linalg.norm(a)
+    norm_b = np.linalg.norm(b)
+    return dot_product / (norm_a * norm_b + 1e-10)  # thêm epsilon tránh chia 0
+
+# def compute_similarities(text_main, text_list):
+#     model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+#     embeddings = model.encode([text_main] + text_list)
+#     main_vec = embeddings[0].reshape(1, -1)
+#     list_vecs = embeddings[1:]
+#     similarities = cosine_similarity(main_vec, list_vecs).flatten()
+#     return similarities
 
 def compute_similarities(text_main, text_list):
     model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
     embeddings = model.encode([text_main] + text_list)
-    main_vec = embeddings[0].reshape(1, -1)
-    list_vecs = embeddings[1:]
-    similarities = cosine_similarity(main_vec, list_vecs).flatten()
-    return similarities
+    main_vec = embeddings[0]
+    similarities = []
+
+    for vec in embeddings[1:]:
+        sim = cosine_similarity_manual(main_vec, vec)
+        similarities.append(sim)
+
+    return np.array(similarities)
 
 st.set_page_config(page_title="Phân tích giọng nói", layout="wide")
 
