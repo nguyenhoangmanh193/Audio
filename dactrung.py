@@ -338,6 +338,6 @@ if __name__ == "__main__":
     d2 = json.loads(x2)
     print(x)
     print(len(x))
-    print(dtw_library(d1, d2))
+
 
 
